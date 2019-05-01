@@ -1,5 +1,5 @@
 CC=gcc
-CFLAGS=-fopenmp
+CFLAGS=
 
 .PHONY: all clean
 
