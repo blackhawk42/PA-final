@@ -1,7 +1,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include <openssl/evp.h>
+
 #define BUFFER_SIZE 256
+#define SUM_SIZE 20
+
+#define ITER_COUNT 1000
 
 void print_help() {
     fprintf(stderr, "use: hasher.exe PASS_LIST\n");
@@ -26,8 +31,18 @@ int null_terminate_newline(char *str) {
 void hash_line(char *pass) {
     null_terminate_newline(pass);
 
-    // TODO: Implement the hashing itself. Right now, we're just printing for testing
-    printf("%s\n", pass);
+	unsigned char sum_buff[SUM_SIZE];
+
+	PKCS5_PBKDF2_HMAC(pass, -1,
+			NULL, 0, ITER_COUNT,
+			EVP_sha1(),
+			SUM_SIZE, sum_buff);
+
+	int i;
+	for(i = 0; i < SUM_SIZE; i++) {
+		printf("%02x", sum_buff[i]);
+	}
+	printf(" %s\n", pass);
 }
 
 int main(int argc, char *argv[]) {
