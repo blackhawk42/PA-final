@@ -10,7 +10,7 @@
 #define SUM_SIZE 20
 
 // Number of iterations for the PBKDF2 hashing function
-#define ITER_COUNT 1000
+#define ITER_COUNT 100000
 
 void print_help() {
     fprintf(stderr, "use: hasher.exe PASS_LIST\n");

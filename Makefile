@@ -6,7 +6,7 @@ CFLAGS=
 all: hasher.exe
 
 hasher.exe: hasher.c
-	$(CC) $(CFLAGS) -fopenmp -lcrypto -lssl -o hasher.exe hasher.c
+	$(CC) $(CFLAGS) hasher.c -lcrypto -lssl -fopenmp -o hasher.exe 
 
 clean:
 	rm -rf *.o *.exe
