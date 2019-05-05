@@ -32,14 +32,15 @@ int null_terminate_newline(char *str) {
     return 0;
 }
 
+
 // Function that implements the hashing of a single line.
 // pass should be a buffer containing a single NULL terminated password to hash.
 // In case a line contains a newlie, it will be truncated at that point with a NULL terminator.
-void hash_line(char *pass) {
+unsigned char *hash_line(char *pass) {
 	// Make sure the line is NULL terminated
     null_terminate_newline(pass);
 
-	unsigned char sum_buff[SUM_SIZE];
+	unsigned char *sum_buff = (unsigned char *)malloc(sizeof(unsigned char)*SUM_SIZE);
 
 	// Execute the hash and store it in sum_buff
 	PKCS5_PBKDF2_HMAC(pass, -1,
@@ -47,12 +48,18 @@ void hash_line(char *pass) {
 			EVP_sha1(),
 			SUM_SIZE, sum_buff);
 
-	// Print the sum
+	return sum_buff;
+}
+
+// Print a hash in hexadecimal.
+// hash_sum refer to the sum itself. name and name_size refers to an identifier,
+// a null-terminated string printed after the hexadecimal.
+unsigned char *print_hash(unsigned char *hash_sum, size_t sum_size,	char *name) {
 	int i;
-	for(i = 0; i < SUM_SIZE; i++) {
-		printf("%02x", sum_buff[i]);
+	for(i = 0; i < sum_size; i++) {
+		printf("%02x", hash_sum[i]);
 	}
-	printf(" %s\n", pass);
+	printf(" %s \n", name);
 }
 
 int main(int argc, char *argv[]) {
@@ -62,6 +69,7 @@ int main(int argc, char *argv[]) {
     }
 
     char line_buff[BUFFER_SIZE];
+	unsigned char *hash_sum;
 
 	// Open the file containing the "passwords" to hash
     FILE *pass_file = fopen(argv[1], "r");
@@ -70,11 +78,26 @@ int main(int argc, char *argv[]) {
         exit(1);
     }
 
-	// Line by line, print the passwords
-    while( fgets(line_buff, BUFFER_SIZE, pass_file) != NULL) {
-		// Hash the current password
-        hash_line(line_buff);
-    }
+#pragma opm parallel
+	{
+#pragma opm single
+		{
+			// Line by line, print the passwords
+			while( fgets(line_buff, BUFFER_SIZE, pass_file) != NULL) {
+#pragma opm task firstprivate(line_buff) private(hash_sum)
+				{
+					// Hash the current password
+					hash_sum = hash_line(line_buff);
+
+#pragma opm critical
+					print_hash(hash_sum, SUM_SIZE, line_buff);
+
+					free(hash_sum);
+				}
+			}
+		}
+
+	}
 
 	// Close the file at the end
     fclose(pass_file);
