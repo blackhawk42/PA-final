@@ -15,8 +15,8 @@
 #define ITER_COUNT 10000
 
 void print_help() {
-    fprintf(stderr, "use: hasher.exe PASS_LIST\n");
-    fprintf(stderr, "\nPASS_LIST is a list of passwords to hash\n");
+    fprintf(stderr, "use: hasher.exe PASS_LIST OUTPUT_FILE\n");
+    fprintf(stderr, "\nPASS_LIST is a list of passwords to hash. OUTPUT_FILE is the file where the hashes will be printed.\n");
 }
 
 // Search a string for a newline and, if one found, replace it with a NULL terminator.
@@ -65,7 +65,7 @@ unsigned char *print_hash(unsigned char *hash_sum, size_t sum_size,	char *name, 
 }
 
 int main(int argc, char *argv[]) {
-    if(argc < 2) {
+    if(argc < 3) {
         print_help();
         exit(0);
     }
@@ -79,7 +79,12 @@ int main(int argc, char *argv[]) {
         fprintf(stderr, "Error opening file: %s", argv[1]);
         exit(1);
     }
-	FILE *out_file = fopen("out.txt", "w");
+	
+FILE *out_file = fopen(argv[2], "w");
+    if(out_file == NULL) {
+        fprintf(stderr, "Error opening output file: %s", argv[2]);
+        exit(1);
+    }
 
 #pragma omp parallel
 	{
