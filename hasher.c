@@ -54,12 +54,12 @@ unsigned char *hash_line(char *pass) {
 // Print a hash in hexadecimal.
 // hash_sum refer to the sum itself. name and name_size refers to an identifier,
 // a null-terminated string printed after the hexadecimal.
-unsigned char *print_hash(unsigned char *hash_sum, size_t sum_size,	char *name) {
+unsigned char *print_hash(unsigned char *hash_sum, size_t sum_size,	char *name, FILE *out_file) {
 	int i;
 	for(i = 0; i < sum_size; i++) {
-		printf("%02x", hash_sum[i]);
+		fprintf(out_file, "%02x", hash_sum[i]);
 	}
-	printf(" %s \n", name);
+	fprintf(out_file, " %s \n", name);
 }
 
 int main(int argc, char *argv[]) {
@@ -77,6 +77,7 @@ int main(int argc, char *argv[]) {
         fprintf(stderr, "Error opening file: %s", argv[1]);
         exit(1);
     }
+	FILE *out_file = fopen("out.txt", "w");
 
 #pragma opm parallel
 	{
@@ -90,7 +91,7 @@ int main(int argc, char *argv[]) {
 					hash_sum = hash_line(line_buff);
 
 #pragma opm critical
-					print_hash(hash_sum, SUM_SIZE, line_buff);
+					print_hash(hash_sum, SUM_SIZE, line_buff, out_file);
 
 					free(hash_sum);
 				}
@@ -101,6 +102,7 @@ int main(int argc, char *argv[]) {
 
 	// Close the file at the end
     fclose(pass_file);
+	fclose(out_file);
 
     return 0;
 }
