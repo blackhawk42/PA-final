@@ -4,13 +4,15 @@
 // For hashing function
 #include <openssl/evp.h>
 
+#include <omp.h>
+
 // Buffer size for storing lines
 #define BUFFER_SIZE 256
 // Size of the resulting sum or digest after hashing
 #define SUM_SIZE 20
 
 // Number of iterations for the PBKDF2 hashing function
-#define ITER_COUNT 100000
+#define ITER_COUNT 10000
 
 void print_help() {
     fprintf(stderr, "use: hasher.exe PASS_LIST\n");
@@ -59,7 +61,7 @@ unsigned char *print_hash(unsigned char *hash_sum, size_t sum_size,	char *name, 
 	for(i = 0; i < sum_size; i++) {
 		fprintf(out_file, "%02x", hash_sum[i]);
 	}
-	fprintf(out_file, " %s \n", name);
+	fprintf(out_file, " %s on thread %d\n", name, omp_get_thread_num());
 }
 
 int main(int argc, char *argv[]) {
@@ -79,18 +81,19 @@ int main(int argc, char *argv[]) {
     }
 	FILE *out_file = fopen("out.txt", "w");
 
-#pragma opm parallel
+#pragma omp parallel
 	{
-#pragma opm single
+#pragma omp single
 		{
+			fprintf(out_file, "Threads: %d\n", omp_get_num_threads());
 			// Line by line, print the passwords
 			while( fgets(line_buff, BUFFER_SIZE, pass_file) != NULL) {
-#pragma opm task firstprivate(line_buff) private(hash_sum)
+#pragma omp task firstprivate(line_buff) private(hash_sum)
 				{
 					// Hash the current password
 					hash_sum = hash_line(line_buff);
 
-#pragma opm critical
+#pragma omp critical
 					print_hash(hash_sum, SUM_SIZE, line_buff, out_file);
 
 					free(hash_sum);
